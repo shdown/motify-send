@@ -1,14 +1,11 @@
+#include "common.h"
 #include "notify.h"
 #include "storage.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 static
 void
-usage(void)
+print_usage_and_exit(void)
 {
     fprintf(stderr, "USAGE: %s [options] appname summary body\n"
                     "    where appname can only contain ASCII letters, digits, underscores and \n"
@@ -21,19 +18,19 @@ usage(void)
                     "    -t timeout: timeout in milliseconds (0 for no timeout, -1 for default).\n"
                     ,
             PROGRAM_NAME);
-    exit(EXIT_FAILURE);
+    exit(2);
 }
 
 static
 bool
-parse_urgency(unsigned char *urgency, const char *arg)
+parse_urgency(const char *arg, unsigned char *out)
 {
     if (strcmp(arg, "low") == 0 || strcmp(arg, "0") == 0) {
-        *urgency = 0;
+        *out = 0;
     } else if (strcmp(arg, "normal") == 0 || strcmp(arg, "1") == 0) {
-        *urgency = 1;
+        *out = 1;
     } else if (strcmp(arg, "critical") == 0 || strcmp(arg, "2") == 0) {
-        *urgency = 2;
+        *out = 2;
     } else {
         return false;
     }
@@ -42,10 +39,9 @@ parse_urgency(unsigned char *urgency, const char *arg)
 
 static
 bool
-parse_timeout(int *timeout, const char *arg)
+parse_timeout(const char *arg, int *out)
 {
-    // who cares?
-    return sscanf(arg, "%d", timeout) == 1;
+    return sscanf(arg, "%d", out) == 1;
 }
 
 static
@@ -86,24 +82,25 @@ main(int argc, char **argv)
             icon_path = optarg;
             break;
         case 'u':
-            if (!parse_urgency(&urgency, optarg)) {
+            if (!parse_urgency(optarg, &urgency)) {
                 fprintf(stderr, "Invalid -u argument: '%s'\n", optarg);
-                usage();
+                print_usage_and_exit();
             }
             break;
         case 't':
-            if (!parse_timeout(&timeout, optarg)) {
+            if (!parse_timeout(optarg, &timeout)) {
                 fprintf(stderr, "Invalid -t argument: '%s'\n", optarg);
-                usage();
+                print_usage_and_exit();
             }
             break;
         case '?':
-            usage();
+            print_usage_and_exit();
         }
     }
 
     if (argc - optind != 3) {
-        usage();
+        fprintf(stderr, "Expected exactly 3 positional arguments.\n");
+        print_usage_and_exit();
     }
     const char *appname = argv[optind++];
     const char *summary = argv[optind++];
@@ -111,25 +108,32 @@ main(int argc, char **argv)
 
     if (!valid_appname(appname)) {
         fprintf(stderr, "Invalid appname.\n");
-        usage();
+        print_usage_and_exit();
     }
 
     if (!notify_init()) {
-        return EXIT_FAILURE;
+        goto fail;
     }
 
     int fd = storage_open(appname);
     if (fd < 0) {
-        return EXIT_FAILURE;
+        goto fail;
     }
+
     if (!storage_lock(fd)) {
-        return EXIT_FAILURE;
+        goto fail;
     }
+
     unsigned replaces_id = show_new ? 0 : storage_read(fd);
     unsigned id = notify(appname, replaces_id, icon_path, summary, body, urgency, timeout);
     if (id) {
-        storage_write(fd, id);
+        if (!storage_write(fd, id)) {
+            goto fail;
+        }
     }
 
-    return EXIT_SUCCESS;
+    return 0;
+
+fail:
+    return 1;
 }

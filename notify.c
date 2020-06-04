@@ -3,8 +3,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <gio/gio.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 static GDBusConnection *cnx;
 
@@ -29,8 +27,8 @@ notify(
     const char *summary,
     const char *body,
     unsigned char urgency,
-    int timeout
-) {
+    int timeout)
+{
     GVariantBuilder *hints = g_variant_builder_new(G_VARIANT_TYPE("a{sv}"));
     g_variant_builder_add(hints, "{sv}", "urgency", g_variant_new_byte(urgency));
 
@@ -48,7 +46,7 @@ notify(
             icon,
             summary,
             body,
-            NULL,
+            (GVariantBuilder *) NULL,
             hints,
             (gint32) timeout
         ),

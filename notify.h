@@ -1,7 +1,7 @@
 #ifndef notify_h_
 #define notify_h_
 
-#include <stdbool.h>
+#include "common.h"
 
 bool
 notify_init(void);
@@ -14,7 +14,6 @@ notify(
     const char *summary,
     const char *body,
     unsigned char urgency,
-    int timeout
-);
+    int timeout);
 
 #endif

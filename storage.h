@@ -1,7 +1,7 @@
-#ifndef store_h_
-#define store_h_
+#ifndef storage_h_
+#define storage_h_
 
-#include <stdbool.h>
+#include "common.h"
 
 int
 storage_open(const char *appname);
