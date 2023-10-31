@@ -55,8 +55,7 @@ done:
     return fd;
 }
 
-bool
-storage_lock(int fd)
+bool storage_lock(int fd)
 {
     if (flock(fd, LOCK_EX) < 0) {
         fprintf(stderr, "flock (LOCK_EX): %s\n", strerror(errno));
@@ -66,8 +65,7 @@ storage_lock(int fd)
     return true;
 }
 
-unsigned
-storage_read(int fd)
+unsigned storage_read(int fd)
 {
     char buf[16];
     ssize_t r = full_read(fd, buf, sizeof(buf) - 1);
@@ -83,8 +81,7 @@ storage_read(int fd)
     return val;
 }
 
-bool
-storage_write(int fd, unsigned value)
+bool storage_write(int fd, unsigned value)
 {
     if (ftruncate(fd, 0) < 0) {
         fprintf(stderr, "ftruncate: %s\n", strerror(errno));
@@ -104,8 +101,7 @@ storage_write(int fd, unsigned value)
     return true;
 }
 
-bool
-storage_unlock(int fd)
+bool storage_unlock(int fd)
 {
     if (flock(fd, LOCK_UN) < 0) {
         fprintf(stderr, "flock (LOCK_UN): %s\n", strerror(errno));

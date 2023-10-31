@@ -3,9 +3,7 @@
 #include "storage.h"
 #include <unistd.h>
 
-static
-void
-print_usage_and_exit(void)
+static void print_usage_and_exit(void)
 {
     fprintf(stderr, "USAGE: %s [options] appname summary body\n"
                     "    where appname can only contain ASCII letters, digits, underscores and \n"
@@ -21,9 +19,7 @@ print_usage_and_exit(void)
     exit(2);
 }
 
-static
-bool
-parse_urgency(const char *arg, unsigned char *out)
+static bool parse_urgency(const char *arg, unsigned char *out)
 {
     if (strcmp(arg, "low") == 0 || strcmp(arg, "0") == 0) {
         *out = 0;
@@ -37,16 +33,12 @@ parse_urgency(const char *arg, unsigned char *out)
     return true;
 }
 
-static
-bool
-parse_timeout(const char *arg, int *out)
+static bool parse_timeout(const char *arg, int *out)
 {
     return sscanf(arg, "%d", out) == 1;
 }
 
-static
-bool
-valid_appname(const char *appname)
+static bool valid_appname(const char *appname)
 {
     if (appname[0] == '\0' || appname[0] == '-') {
         return false;
@@ -65,8 +57,7 @@ valid_appname(const char *appname)
     return true;
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     bool show_new = false;
     const char *icon_path = "";

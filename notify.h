@@ -3,11 +3,9 @@
 
 #include "common.h"
 
-bool
-notify_init(void);
+bool notify_init(void);
 
-unsigned
-notify(
+unsigned notify(
     const char *appname,
     unsigned replaces_id,
     const char *icon,

@@ -6,8 +6,7 @@
 
 static GDBusConnection *cnx;
 
-bool
-notify_init(void)
+bool notify_init(void)
 {
     GError *err = NULL;
     cnx = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &err);
@@ -19,8 +18,7 @@ notify_init(void)
     return true;
 }
 
-unsigned
-notify(
+unsigned notify(
     const char *appname,
     unsigned replaces_id,
     const char *icon,
