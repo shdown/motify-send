@@ -40,15 +40,15 @@ static bool parse_timeout(const char *s, int32_t *out)
     char *endptr;
     long res = strtol(s, &endptr, 10);
     if (errno || endptr == s || *endptr != '\0') {
-        return -1;
+        return false;
     }
 #if LONG_MAX > INT32_MAX
     if (res < INT32_MIN || res > INT32_MAX) {
-        return -1;
+        return false;
     }
 #endif
     *out = res;
-    return 0;
+    return true;
 }
 
 static bool is_valid_appname(const char *appname)

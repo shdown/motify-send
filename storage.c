@@ -35,7 +35,7 @@ static void die(const char *what)
 
 static inline int try_open(const char *path)
 {
-    return open(path, O_RDWR | O_CREAT | O_CLOEXEC, (mode_t) 0600);
+    return open(path, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, (mode_t) 0600);
 }
 
 static inline int try_mkdir(const char *path)
