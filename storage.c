@@ -33,9 +33,20 @@ static void die(const char *what)
     exit(1);
 }
 
-static inline int try_open(const char *path)
+static inline int try_open(const char *d_path, const char *f_name)
 {
-    return open(path, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, (mode_t) 0600);
+    int dir_fd = open(d_path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_DIRECTORY);
+    if (dir_fd < 0) {
+        return -1;
+    }
+
+    int file_fd = openat(dir_fd, f_name, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, (mode_t) 0600);
+
+    int saved_errno = errno;
+    close(dir_fd);
+    errno = saved_errno;
+
+    return file_fd;
 }
 
 static inline int try_mkdir(const char *path)
@@ -56,9 +67,8 @@ int storage_open(const char *appname)
     }
 
     char *d_path = xasprintf("%s%s", DIR_PREFIX, login);
-    char *f_path = xasprintf("%s/%s", d_path, appname);
 
-    int fd = try_open(f_path);
+    int fd = try_open(d_path, appname);
     if (fd >= 0) {
         goto ok;
     }
@@ -77,14 +87,13 @@ int storage_open(const char *appname)
     }
 
     // now, let's try to open the file again.
-    fd = try_open(f_path);
+    fd = try_open(d_path, appname);
     if (fd < 0) {
         die_with_errno("open");
     }
 
 ok:
     free(d_path);
-    free(f_path);
     return fd;
 }
 
