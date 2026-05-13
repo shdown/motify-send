@@ -189,7 +189,7 @@ void storage_write(int fd, uint32_t x)
         die_with_errno("lseek (SEEK_SET)");
     }
 
-    // write the prepaed data
+    // write the prepared data
     if (full_write(fd, data, strlen(data)) < 0) {
         // die, but first try to truncate the file to zero size,
         // to "clear" partial data that we could have written.

@@ -29,7 +29,7 @@ static char *fptr_error;
 // functions to parse a string into that type.
 //
 // Also, all functions take a "spec" argument. It is only
-// used for functions that parse intger types; it signifies
+// used for functions that parse integer types; it signifies
 // the signedness and bit width of an integer type.
 // E.g. -16 means int16_t, 16 means uint16_t.
 

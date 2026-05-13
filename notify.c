@@ -54,7 +54,7 @@ static GVariant *hint2gv(const NotifyHint *h)
     case NHT_UINT64: return g_variant_new_uint64(h->data.i);
     }
 
-    // Shoul be unreachable.
+    // Should be unreachable.
     abort();
 }
 
