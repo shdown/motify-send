@@ -88,7 +88,7 @@ Options
 | `-H KEY=TYPE:VALUE` | Add a custom hint |
 | `-h` | Show usage information |
 
-Custom Hints
+Custom hints
 ===
 
 Hints allow you to attach typed metadata to notifications using the `-H KEY=TYPE:VALUE` syntax.
@@ -106,7 +106,7 @@ Supported hint types
 
 For type `byte`, empty string means NUL byte (`\0`).
 
-Application Name Rules
+Application name rules
 ===
 
 The `APPNAME` must:
@@ -114,10 +114,10 @@ The `APPNAME` must:
 - Contain only alphanumeric characters, underscores (`_`), or hyphens (`-`);
 - Not start with `-`.
 
-How It Works
+How it works
 ===
 
-motify-send persists notification IDs per application name using a storage file in `/tmp`.
+motify-send persists notification IDs per application name using a storage file in `$XDG_RUNTIME_DIR` (or, if not set, in `/tmp`).
 
 License
 ===
