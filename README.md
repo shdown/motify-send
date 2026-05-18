@@ -82,7 +82,7 @@ Options
 |--------|-------------|
 | `-i PATH` | Path to the icon file |
 | `-u URGENCY` | Set urgency: `0`/`low`, `1`/`normal`, or `2`/`critical` |
-| `-t SECONDS` | Set timeout in seconds (negative = no timeout) |
+| `-t MILLIS` | Set timeout in milliseconds (negative = no timeout) |
 | `-n` | Force creation of a new notification (never replace) |
 | `-c` | Close existing notification for the given APPNAME |
 | `-H KEY=TYPE:VALUE` | Add a custom hint |

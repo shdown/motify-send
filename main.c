@@ -113,7 +113,7 @@ static void print_usage_and_exit(const char *extra_msg)
         "Supported OPTIONs (all of them only make sense in the usage #1 above):\n"
         "    -i PATH: set path to the icon file.\n"
         "    -u URGENCY: set urgency; URGENCY is either '0'/'low', '1'/'normal' or '2'/'critical'.\n"
-        "    -t SECONDS: set notification timeout in seconds; negative value means no timeout.\n"
+        "    -t MILLIS: set notification timeout in milliseconds; negative value means no timeout.\n"
         "    -n: force creation of a new notification; never replace.\n"
         "    -H KEY=TYPE:VALUE: add a hint.\n"
         "\n"
