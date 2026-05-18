@@ -17,8 +17,6 @@
 #include "common.h"
 #include "io_utils.h"
 
-static const char *DIR_PREFIX = "/tmp/motify-send_";
-
 ATTR_NORETURN
 static void die_with_errno(const char *where)
 {
@@ -31,6 +29,15 @@ static void die(const char *what)
 {
     fprintf(stderr, "storage: %s\n", what);
     exit(1);
+}
+
+static char *alloc_dir_prefix(void)
+{
+    const char *base = getenv("XDG_RUNTIME_DIR");
+    if (!base || !base[0]) {
+        base = "/tmp";
+    }
+    return xasprintf("%s/motify-send_", base);
 }
 
 static inline int try_open(const char *d_path, const char *f_name)
@@ -66,7 +73,8 @@ int storage_open(const char *appname)
         die("login contains prohibited character");
     }
 
-    char *d_path = xasprintf("%s%s", DIR_PREFIX, login);
+    char *d_prefix = alloc_dir_prefix();
+    char *d_path = xasprintf("%s%s", d_prefix, login);
 
     int fd = try_open(d_path, appname);
     if (fd >= 0) {
@@ -94,6 +102,7 @@ int storage_open(const char *appname)
 
 ok:
     free(d_path);
+    free(d_prefix);
     return fd;
 }
 
@@ -119,7 +128,7 @@ static inline int rstrip_nl(const char *buf, int nbuf)
     return nbuf;
 }
 
-static inline uint32_t do_parse_u32_or_die(const char *s)
+static inline uint32_t do_parse_u32(const char *s)
 {
     errno = 0;
     char *endptr;
@@ -133,13 +142,14 @@ static inline uint32_t do_parse_u32_or_die(const char *s)
     }
 #endif
     return res;
+
 fail:
-    die("cannot parse file content into uint32_t");
+    return 0;
 }
 
 uint32_t storage_read(int fd)
 {
-    uint32_t res;
+    uint32_t res = 0;
 
     // lock the file
     do_lock_or_die(fd);
@@ -150,19 +160,17 @@ uint32_t storage_read(int fd)
     if (nread < 0) {
         die_with_errno("read");
     } else if (nread == 0) {
-        res = 0;
         goto unlock;
     } else if (nread == (int) sizeof(buf)) {
         die("file is too large");
     }
 
-    // strip a newline and zero-terminate the buffer
-    int stripped_len = rstrip_nl(buf, nread);
-    // stripped_len <= nread < sizeof(buf), so it's OK to do this
-    buf[stripped_len] = '\0';
+    if (buf[nread - 1] != '\n') {
+        goto unlock;
+    }
+    buf[nread - 1] = '\0';
 
-    // parse the content
-    res = do_parse_u32_or_die(buf);
+    res = do_parse_u32(buf);
 
 unlock:
     // unlock
