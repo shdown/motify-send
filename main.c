@@ -15,7 +15,7 @@
 #include "hint_list.h"
 #include "hint_parser.h"
 
-static HintList hint_list = HINT_LIST_STATIC_INIT;
+static HintList hint_list = {0};
 
 static bool parse_urgency(const char *s, unsigned char *out)
 {
@@ -38,15 +38,13 @@ static bool parse_timeout(const char *s, int32_t *out)
 {
     errno = 0;
     char *endptr;
-    long res = strtol(s, &endptr, 10);
+    int64_t res = strtoll(s, &endptr, 10);
     if (errno || endptr == s || *endptr != '\0') {
         return false;
     }
-#if LONG_MAX > INT32_MAX
     if (res < INT32_MIN || res > INT32_MAX) {
         return false;
     }
-#endif
     *out = res;
     return true;
 }
@@ -77,8 +75,8 @@ static bool is_valid_appname(const char *appname)
 
 static void add_hint(const char *s)
 {
-    size_t hint_idx = hint_list_size(&hint_list);
-    char descr[20 + 24];
+    size_t hint_idx = hint_list.size;
+    char descr[100];
     snprintf(descr, sizeof(descr), "hint with index %zu", hint_idx);
 
     NotifyHint hint;

@@ -5,25 +5,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdarg.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include "common.h"
 #include "notify.h"
 
-#define die_fmt(arg_descr, ...) \
-    do { \
-        fprintf(stderr, "Cannot parse %s: ", (arg_descr)); \
-        fprintf(stderr, __VA_ARGS__); \
-        fprintf(stderr, "\n"); \
-        exit(2); \
-    } while (0)
+static void die_fmt(const char *arg_descr, const char *fmt, ...)
+{
+    va_list vl;
+    va_start(vl, fmt);
+    char *msg = xasprintf_vl(fmt, vl);
+    va_end(vl);
+
+    fprintf(stderr, "Cannot parse %s: %s\n", arg_descr, msg);
+
+    exit(1);
+}
 
 static char *fptr_error;
-
-#define clear_fptr_error() (free(fptr_error), fptr_error = NULL)
-
-#define set_fptr_error(...) (free(fptr_error), fptr_error = xasprintf(__VA_ARGS__))
 
 // So, we have a catalogue of known D-Bus types, along with
 // functions to parse a string into that type.
@@ -53,7 +54,7 @@ static int do_bool(NotifyHintData *dst, const char *s, int spec)
         return 0;
 
     } else {
-        set_fptr_error("expected either of: '0'/'1'/'true'/'false'");
+        fptr_error = "expected either of: '0'/'1'/'true'/'false'";
         return -1;
     }
 }
@@ -82,12 +83,13 @@ static int do_byte(NotifyHintData *dst, const char *s, int spec)
 
     } else if (s[0] == '#') {
         if (strlen(s) != 3) {
-            set_fptr_error("invalid #XX escape (wrong length)");
+            fptr_error = "invalid #XX escape (wrong length)";
+            return -1;
         }
         int hi = decode_hex_digit(s[1]);
         int lo = decode_hex_digit(s[2]);
         if (hi < 0 || lo < 0) {
-            set_fptr_error("invalid #XX escape (bad hex digit)");
+            fptr_error = "invalid #XX escape (bad hex digit)";
             return -1;
         }
         uint8_t res = (hi << 4) | lo;
@@ -95,7 +97,7 @@ static int do_byte(NotifyHintData *dst, const char *s, int spec)
         return 0;
 
     } else {
-        set_fptr_error("expected either of: empty string/single byte/#XX escape");
+        fptr_error = "expected either of: empty string/single byte/#XX escape";
         return -1;
     }
 }
@@ -105,7 +107,7 @@ static int do_str(NotifyHintData *dst, const char *s, int spec)
     (void) spec;
 
     if (!notify_is_valid_utf8_str(s)) {
-        set_fptr_error("string contains invalid UTF-8");
+        fptr_error = "string contains invalid UTF-8";
         return -1;
     }
 
@@ -122,7 +124,7 @@ static int do_double(NotifyHintData *dst, const char *s, int spec)
     double d = strtod(s, &endptr);
 
     if (errno != 0 || s[0] == '\0' || *endptr != '\0') {
-        set_fptr_error("cannot parse into double");
+        fptr_error = "cannot parse into double";
         return -1;
     }
 
@@ -176,7 +178,7 @@ static int do_int(NotifyHintData *dst, const char *s, int spec)
     }
 
     if (errno != 0 || s[0] == '\0' || *endptr != '\0') {
-        set_fptr_error("cannot parse into integer");
+        fptr_error = "cannot parse into integer";
         return -1;
     }
 
@@ -195,7 +197,7 @@ static int do_int(NotifyHintData *dst, const char *s, int spec)
     return 0;
 
 overflow:
-    set_fptr_error("overflow or underflow");
+    fptr_error = "overflow or underflow";
     return -1;
 }
 
@@ -276,7 +278,7 @@ void parse_hint(const char *arg, NotifyHint *out, const char *arg_descr)
     out->spelling = xstrdup(spelling);
     out->type = kt->type;
 
-    clear_fptr_error();
+    fptr_error = NULL;
 
     free(s);
 }

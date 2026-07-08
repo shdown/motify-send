@@ -132,15 +132,13 @@ static inline uint32_t do_parse_u32(const char *s)
 {
     errno = 0;
     char *endptr;
-    unsigned long res = strtoul(s, &endptr, 10);
+    uint64_t res = strtoull(s, &endptr, 10);
     if (errno || endptr == s || *endptr != '\0') {
         goto fail;
     }
-#if ULONG_MAX > UINT32_MAX
     if (res > UINT32_MAX) {
         goto fail;
     }
-#endif
     return res;
 
 fail:
@@ -192,7 +190,7 @@ void storage_write(int fd, uint32_t x)
         die_with_errno("ftruncate");
     }
 
-    // seek to the end
+    // seek to the beginning
     if (lseek(fd, 0, SEEK_SET) == (off_t) -1) {
         die_with_errno("lseek (SEEK_SET)");
     }
