@@ -251,6 +251,10 @@ int main(int argc, char **argv)
         }
     }
 
+    if (args.c_flag && args.n_flag) {
+        print_usage_and_exit("Flags '-n' and '-c' are mutually exclusive.");
+    }
+
     if (args.c_flag) {
         if (argc - optind != 1) {
             print_usage_and_exit("Expected exactly one positional argument.");
