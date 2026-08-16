@@ -7,12 +7,14 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <pwd.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include <stdbool.h>
 #include <inttypes.h>
 #include "common.h"
 #include "io_utils.h"
@@ -31,28 +33,49 @@ static void die(const char *what)
     exit(1);
 }
 
-static char *alloc_dir_prefix(void)
+static char *alloc_dir_prefix(bool *out_may_be_unsafe)
 {
     const char *base = getenv("XDG_RUNTIME_DIR");
-    if (!base || !base[0]) {
+    if (base && base[0]) {
+        *out_may_be_unsafe = false;
+    } else {
         base = "/tmp";
+        *out_may_be_unsafe = true;
     }
     return xasprintf("%s/motify-send_", base);
 }
 
-static inline int try_open(const char *d_path, const char *f_name)
+static int try_open(const char *d_path, const char *f_name, bool d_may_be_unsafe)
 {
-    int dir_fd = open(d_path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_DIRECTORY);
+    int file_fd = -1;
+    int dir_fd = -1;
+
+    dir_fd = open(d_path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_DIRECTORY);
     if (dir_fd < 0) {
-        return -1;
+        goto done;
     }
 
-    int file_fd = openat(dir_fd, f_name, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, (mode_t) 0600);
+    if (d_may_be_unsafe) {
+        struct stat d_info;
+        if (fstat(dir_fd, &d_info) < 0) {
+            die_with_errno("fstat");
+        }
+        if (d_info.st_uid != geteuid()) {
+            die("directory is owned by someone else");
+        }
+        if ((d_info.st_mode & ~S_IFMT) != S_IRWXU) {
+            die("directory has wrong mode (expected 0777)");
+        }
+    }
 
-    int saved_errno = errno;
-    close(dir_fd);
-    errno = saved_errno;
+    file_fd = openat(dir_fd, f_name, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, (mode_t) 0600);
 
+done:
+    if (dir_fd >= 0) {
+        int saved_errno = errno;
+        close(dir_fd);
+        errno = saved_errno;
+    }
     return file_fd;
 }
 
@@ -61,22 +84,32 @@ static inline int try_mkdir(const char *path)
     return mkdir(path, 0700);
 }
 
+static const char *fetch_login(void)
+{
+    struct passwd *entry = getpwuid(geteuid());
+    if (!entry) {
+        die_with_errno("getpwuid");
+    }
+    if (!entry->pw_name) {
+        die("result of getpwuid() has null pw_name (this should never happen)");
+    }
+    return entry->pw_name;
+}
+
 int storage_open(const char *appname)
 {
     assert(appname != NULL);
 
-    const char *login = getlogin();
-    if (!login) {
-        die_with_errno("login");
-    }
+    const char *login = fetch_login();
     if ((strchr(login, '/'))) {
         die("login contains prohibited character");
     }
 
-    char *d_prefix = alloc_dir_prefix();
+    bool d_may_be_unsafe;
+    char *d_prefix = alloc_dir_prefix(&d_may_be_unsafe);
     char *d_path = xasprintf("%s%s", d_prefix, login);
 
-    int fd = try_open(d_path, appname);
+    int fd = try_open(d_path, appname, d_may_be_unsafe);
     if (fd >= 0) {
         goto ok;
     }
@@ -95,7 +128,7 @@ int storage_open(const char *appname)
     }
 
     // now, let's try to open the file again.
-    fd = try_open(d_path, appname);
+    fd = try_open(d_path, appname, d_may_be_unsafe);
     if (fd < 0) {
         die_with_errno("open");
     }
