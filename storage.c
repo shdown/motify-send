@@ -120,14 +120,6 @@ static inline void do_unlock_or_die(int fd)
     }
 }
 
-static inline int rstrip_nl(const char *buf, int nbuf)
-{
-    if (nbuf && buf[nbuf - 1] == '\n') {
-        return nbuf - 1;
-    }
-    return nbuf;
-}
-
 static inline uint32_t do_parse_u32(const char *s)
 {
     errno = 0;
