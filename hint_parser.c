@@ -12,6 +12,7 @@
 #include "common.h"
 #include "notify.h"
 
+ATTR_NORETURN
 static void die_fmt(const char *arg_descr, const char *fmt, ...)
 {
     va_list vl;

@@ -94,6 +94,7 @@ static void add_urgency_hint(unsigned char urgency)
     hint_list_add(&hint_list, hint);
 }
 
+ATTR_NORETURN
 static void print_usage_and_exit(const char *extra_msg)
 {
     if (extra_msg) {
@@ -141,6 +142,7 @@ typedef struct {
     const char *body;
 } Args;
 
+ATTR_NORETURN
 static void die_bad_utf8(const char *what)
 {
     fprintf(stderr, "FATAL: %s contains invalid UTF-8.\n", what);
