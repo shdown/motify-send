@@ -138,7 +138,7 @@ void notify_global_deinit(void)
 {
     assert(cnx != NULL);
 
-    (void) g_dbus_connection_close_sync(cnx, NULL, NULL);
+    (void) g_object_unref(cnx);
 
     cnx = NULL;
 }
